@@ -1,8 +1,144 @@
-<html>
-    <body><center>
-        <h1>
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Save Tool</title>
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #eef2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 400px;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            font-size: 24px;
+            text-align: center;
+            margin: 20px 0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        input[type="text"]:focus { border-color: #28a745; outline: none; }
 
-            My Projects J.attapon        
-        </h1>
-    </center></body>
+        .barcode-box {
+            min-height: 120px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #fff;
+            border: 1px dashed #ccc;
+            margin-bottom: 20px;
+            padding: 10px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            cursor: pointer;
+            color: white;
+            margin-bottom: 10px;
+            transition: 0.2s;
+        }
+        
+        .btn-save { background-color: #007bff; }
+        .btn-save:hover { background-color: #0056b3; }
+        
+        .btn-print { background-color: #6c757d; }
+        .btn-print:hover { background-color: #5a6268; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 style="margin:0; color:#333;">Barcode Generator</h2>
+    <p style="color:#666; margin-top:5px;">LT Rubber / Camso Label</p>
+    
+    <input type="text" id="codeInput" placeholder="S548029001" onkeyup="previewBarcode()" autofocus>
+
+    <div class="barcode-box">
+        <img id="barcodeImg" src="" style="display:none; max-width: 100%;">
+        <span id="placeholder" style="color:#aaa;">Preview</span>
+    </div>
+
+    <button class="btn btn-save" onclick="saveImageAs()">📂 บันทึกรูปลง Folder</button>
+    
+    <button class="btn btn-print" onclick="window.print()">🖨️ พิมพ์</button>
+</div>
+
+<script>
+    function getApiUrl(text) {
+        // ใช้ API TEC-IT เหมือนเดิม
+        return `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(text)}&translate-esc=on&dpi=200&showhrt=no`;
+    }
+
+    function previewBarcode() {
+        const text = document.getElementById('codeInput').value;
+        const img = document.getElementById('barcodeImg');
+        const ph = document.getElementById('placeholder');
+
+        if(text.trim()){
+            img.src = getApiUrl(text);
+            img.style.display = 'block';
+            ph.style.display = 'none';
+        } else {
+            img.style.display = 'none';
+            ph.style.display = 'block';
+        }
+    }
+
+    async function saveImageAs() {
+        const text = document.getElementById('codeInput').value.trim();
+        if(!text) { alert("กรุณาใส่รหัสก่อนครับ"); return; }
+
+        try {
+            // 1. ดึงข้อมูลรูปภาพมาเป็น Blob (Binary Data)
+            const response = await fetch(getApiUrl(text));
+            const blob = await response.blob();
+            
+            // 2. สร้าง Link ชั่วคราวใน Memory
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            
+            // 3. กำหนดชื่อไฟล์อัตโนมัติ (เช่น 548029.gif)
+            a.download = `${text}.gif`; 
+            
+            // 4. สั่งคลิก Link เพื่อเรียกหน้าต่าง Save As
+            document.body.appendChild(a);
+            a.click();
+            
+            // 5. ล้างข้อมูล
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+        } catch (err) {
+            alert("ไม่สามารถดาวน์โหลดอัตโนมัติได้ ให้คลิกขวาที่รูปแล้วเลือก Save Image As แทนครับ");
+            console.error(err);
+        }
+    }
+</script>
+
+</body>
 </html>
