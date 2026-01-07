@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Save Tool</title>
+    <title>LT Rubber Barcode - Save Tool</title>
     <style>
         body {
             font-family: 'Sarabun', sans-serif;
-            background-color: #eef2f5;
+            background-color: #f4f6f8;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -16,127 +16,115 @@
         }
         .container {
             background: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
             text-align: center;
-            width: 400px;
+            width: 350px;
         }
         
         input[type="text"] {
             width: 100%;
-            padding: 15px;
-            font-size: 24px;
+            padding: 12px;
+            font-size: 20px;
             text-align: center;
-            margin: 20px 0;
+            margin: 15px 0;
             border: 2px solid #ddd;
             border-radius: 8px;
             box-sizing: border-box;
-            font-weight: bold;
-            letter-spacing: 1px;
         }
-        input[type="text"]:focus { border-color: #28a745; outline: none; }
+        input[type="text"]:focus { border-color: #007bff; outline: none; }
 
         .barcode-box {
-            min-height: 120px;
+            min-height: 100px;
             display: flex;
             justify-content: center;
             align-items: center;
-            background: #fff;
             border: 1px dashed #ccc;
-            margin-bottom: 20px;
             padding: 10px;
+            margin-bottom: 20px;
+            background: #fff;
         }
 
         .btn {
+            display: block;
             width: 100%;
-            padding: 15px;
+            padding: 10px;
+            margin: 5px 0;
             border: none;
-            border-radius: 6px;
-            font-size: 18px;
+            border-radius: 5px;
+            font-size: 16px;
             cursor: pointer;
             color: white;
-            margin-bottom: 10px;
-            transition: 0.2s;
         }
+        .btn-view { background-color: #17a2b8; } /* สีฟ้า */
+        .btn-view:hover { background-color: #138496; }
         
-        .btn-save { background-color: #007bff; }
-        .btn-save:hover { background-color: #0056b3; }
-        
-        .btn-print { background-color: #6c757d; }
+        .btn-print { background-color: #6c757d; } /* สีเทา */
         .btn-print:hover { background-color: #5a6268; }
 
+        .hint { font-size: 12px; color: #666; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 style="margin:0; color:#333;">Barcode Generator</h2>
-    <p style="color:#666; margin-top:5px;">LT Rubber / Camso Label</p>
-    
-    <input type="text" id="codeInput" placeholder="S548029001" onkeyup="previewBarcode()" autofocus>
+    <h3>เครื่องสร้างบาร์โค้ด</h3>
+    <input type="text" id="code" placeholder="ใส่รหัสที่นี่..." onkeyup="gen()" autofocus>
 
     <div class="barcode-box">
-        <img id="barcodeImg" src="" style="display:none; max-width: 100%;">
-        <span id="placeholder" style="color:#aaa;">Preview</span>
+        <img id="bcImg" src="" style="display:none; max-width: 100%;">
+        <span id="txt" style="color:#aaa;">รหัสจะขึ้นที่นี่</span>
     </div>
 
-    <button class="btn btn-save" onclick="saveImageAs()">📂 บันทึกรูปลง Folder</button>
+    <button class="btn btn-view" onclick="openImage()">🔍 เปิดรูปเพื่อบันทึก (Save As)</button>
     
-    <button class="btn btn-print" onclick="window.print()">🖨️ พิมพ์</button>
+    <button class="btn btn-print" onclick="window.print()">🖨️ สั่งพิมพ์หน้านี้</button>
+
+    <p class="hint">
+        *วิธีกด Save: กดปุ่มสีฟ้า > คลิกขวาที่รูป > เลือก "Save Image As"
+    </p>
 </div>
 
 <script>
-    function getApiUrl(text) {
-        // ใช้ API TEC-IT เหมือนเดิม
-        return `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(text)}&translate-esc=on&dpi=200&showhrt=no`;
+    function getUrl(val) {
+        // สร้าง URL บาร์โค้ด (dpi=200 ชัดเจน)
+        return `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(val)}&translate-esc=on&dpi=200&showhrt=no`;
     }
 
-    function previewBarcode() {
-        const text = document.getElementById('codeInput').value;
-        const img = document.getElementById('barcodeImg');
-        const ph = document.getElementById('placeholder');
+    function gen() {
+        const val = document.getElementById('code').value;
+        const img = document.getElementById('bcImg');
+        const txt = document.getElementById('txt');
 
-        if(text.trim()){
-            img.src = getApiUrl(text);
+        if(val.trim()){
+            img.src = getUrl(val);
             img.style.display = 'block';
-            ph.style.display = 'none';
+            txt.style.display = 'none';
         } else {
             img.style.display = 'none';
-            ph.style.display = 'block';
+            txt.style.display = 'block';
         }
     }
 
-    async function saveImageAs() {
-        const text = document.getElementById('codeInput').value.trim();
-        if(!text) { alert("กรุณาใส่รหัสก่อนครับ"); return; }
-
-        try {
-            // 1. ดึงข้อมูลรูปภาพมาเป็น Blob (Binary Data)
-            const response = await fetch(getApiUrl(text));
-            const blob = await response.blob();
-            
-            // 2. สร้าง Link ชั่วคราวใน Memory
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            
-            // 3. กำหนดชื่อไฟล์อัตโนมัติ (เช่น 548029.gif)
-            a.download = `${text}.gif`; 
-            
-            // 4. สั่งคลิก Link เพื่อเรียกหน้าต่าง Save As
-            document.body.appendChild(a);
-            a.click();
-            
-            // 5. ล้างข้อมูล
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-            
-        } catch (err) {
-            alert("ไม่สามารถดาวน์โหลดอัตโนมัติได้ ให้คลิกขวาที่รูปแล้วเลือก Save Image As แทนครับ");
-            console.error(err);
-        }
+    function openImage() {
+        const val = document.getElementById('code').value;
+        if(!val.trim()) { alert("ใส่รหัสก่อนครับ"); return; }
+        
+        const url = getUrl(val);
+        
+        // เปิดหน้าต่างใหม่ เขียน HTML ลงไปเพื่อให้คลิกขวา Save ง่ายๆ
+        const win = window.open("");
+        win.document.write(`
+            <html>
+            <head><title>Save Barcode ${val}</title></head>
+            <body style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#eee;">
+                <h3>รหัส: ${val}</h3>
+                <img src="${url}" style="border:1px solid #ccc; background:#fff; padding:20px;">
+                <p style="font-family:sans-serif; color:#555;">คลิกขวาที่รูปด้านบน แล้วเลือก <b>"Save Image As..."</b> (บันทึกรูปภาพเป็น...)</p>
+            </body>
+            </html>
+        `);
     }
 </script>
 
