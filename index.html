@@ -1,132 +1,287 @@
 <!DOCTYPE html>
+
 <html lang="th">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LT Rubber Barcode - Save Tool</title>
-    <style>
+
+    <title>Barcode Referential for Shipments</title>
+
+    <script src="bwip-js.min.js"></script> 
+
+    <script src="https://unpkg.com/bwip-js@4.8.0/dist/bwip-js.min.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+
+    
+
+   <style>
+        /* --- CSS: INTERFACE --- */
         body {
             font-family: 'Sarabun', sans-serif;
-            background-color: #f4f6f8;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
+            background-color: #e2e8f0;
+            margin: 0; padding: 20px;
+            display: flex; gap: 20px; justify-content: center;
+            height: 100vh; box-sizing: border-box;
         }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            text-align: center;
-            width: 350px;
+
+        .control-panel {
+            width: 340px; background: white; padding: 20px;
+            border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow-y: auto; height: 95vh; flex-shrink: 0;
+            display: flex; flex-direction: column; /* จัด Layout แนวตั้ง */
         }
+        .control-panel h2 { margin-top: 0; color: #2c5282; border-bottom: 2px solid #eee; padding-bottom: 10px;}
         
-        input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            font-size: 20px;
+        .section-title { font-size: 14px; font-weight: bold; color: #e53e3e; margin-top: 15px; margin-bottom: 5px; }
+
+        .form-group { margin-bottom: 10px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 13px; color: #4a5568;}
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; box-sizing: border-box;
+            font-family: 'Sarabun', sans-serif; font-size: 14px;
+        }
+
+        .btn-generate {
+            width: 100%; padding: 12px; background-color: #38a169; color: white; border: none; border-radius: 4px; 
+            font-size: 16px; cursor: pointer; font-weight: bold; margin-top: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn-generate:hover { background-color: #2f855a; }
+
+        .btn-print {
+            width: 100%; padding: 12px; background-color: #2b6cb0; color: white; border: none; border-radius: 4px; 
+            font-size: 16px; cursor: pointer; font-weight: bold; margin-top: 10px;
+        }
+        .btn-print:hover { background-color: #2c5282; }
+
+        /* --- FOOTER STYLE (ส่วนที่เพิ่มใหม่) --- */
+        .footer-credit {
+            margin-top: auto; /* ดันลงล่างสุด */
+            padding-top: 20px;
+            border-top: 1px solid #eee;
             text-align: center;
-            margin: 15px 0;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            box-sizing: border-box;
+            font-size: 12px;
+            color: #718096;
+            line-height: 1.5;
         }
-        input[type="text"]:focus { border-color: #007bff; outline: none; }
+        .footer-credit b { color: #2d3748; }
 
-        .barcode-box {
-            min-height: 100px;
+        /* --- PREVIEW AREA --- */
+        .preview-area { 
+            flex: 1; 
+            overflow-y: auto; 
+            background: #cbd5e0; 
+            padding: 20px;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            border: 1px dashed #ccc;
-            padding: 10px;
-            margin-bottom: 20px;
-            background: #fff;
+            gap: 20px; 
         }
 
-        .btn {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            color: white;
+        /* --- LABEL CSS --- */
+        .label-container {
+            width: 4in; height: 10in; background-color: white; 
+            padding: 0; box-sizing: border-box; border: 1px solid #000;
+            display: flex; flex-direction: column;
+            position: relative; font-family: Arial, Helvetica, sans-serif; 
+            color: black;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            flex-shrink: 0; 
         }
-        .btn-view { background-color: #17a2b8; } /* สีฟ้า */
-        .btn-view:hover { background-color: #138496; }
+
+        .row { border-bottom: 1px solid black; width: 100%; display: flex; overflow: hidden; }
+        .row.last { border-bottom: none; }
+        .field-label { font-size: 8pt; font-weight: bold; position: absolute; top: 2px; left: 4px; }
+        .field-value { width: 100%; text-align: center; font-size: 22pt; font-weight: bold; margin-top: 18px; line-height: 1; }
+        .cell { position: relative; padding: 4px; box-sizing: border-box; }
         
-        .btn-print { background-color: #6c757d; } /* สีเทา */
-        .btn-print:hover { background-color: #5a6268; }
+        .row-1 { height: 1in; } 
+        .cell-half { width: 50%; border-right: 1px solid black; font-size: 9pt; padding: 4px; }
+        .cell-half:last-child { border-right: none; }
+        .addr-text { white-space: pre-wrap; font-weight: normal; line-height: 1.2; }
+        .addr-header { font-weight: bold; margin-bottom: 2px; font-size: 8pt; }
 
-        .hint { font-size: 12px; color: #666; margin-top: 10px; }
+        .row-2 { height: 2.2in; flex-direction: column; align-items: center; justify-content: center; padding: 10px; position: relative; }
+        .text-under-2d { font-size: 9pt; margin-top: 5px; font-family: 'Arial Narrow', sans-serif; }
+
+        .row-3 { height: 1in; display: block; position: relative; }
+        .barcode-1d-wrapper { text-align: center; margin-top: 2px; }
+
+        .row-4 { height: 0.6in; display: block; position: relative; }
+        .value-desc { font-size: 16pt; margin-top: 20px; }
+
+        .row-5 { height: 0.9in; display: block; position: relative; }
+        .row-6 { height: 0.7in; display: block; position: relative; }
+        .row-7 { height: 0.7in; display: block; position: relative; }
+        .row-8 { height: 0.7in; display: block; position: relative; }
+        .eudr-flag { position: absolute; right: 10px; top: 15px; font-size: 18pt; font-weight: normal; }
+        .row-9 { height: 0.7in; display: block; position: relative; }
+        .row-10 { height: 1.2in; display: block; position: relative; flex: 1; }
+
+        canvas { max-width: 95%; }
+
+        /* --- PRINT SETTINGS --- */
+        @media print {
+            body { background: none; display: block; padding: 0; margin: 0; }
+            .control-panel { display: none; } /* ซ่อน Control Panel + Footer ตอน Print */
+            .preview-area { display: block; background: none; padding: 0; overflow: visible; }
+            .label-container { 
+                border: none; 
+                box-shadow: none; 
+                margin: 0; 
+                page-break-after: always;
+            }
+            .label-container:last-child { page-break-after: auto; }
+            @page { size: 4in 10in; margin: 0; }
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h3>เครื่องสร้างบาร์โค้ด</h3>
-    <input type="text" id="code" placeholder="ใส่รหัสที่นี่..." onkeyup="gen()" autofocus>
+    <div class="control-panel">
+        <div>
+            <h2>🖨️ Batch Label Generator</h2>
+            
+            <div class="section-title">1. ตั้งค่าการพิมพ์ (Batch Setting)</div>
+            <div class="form-group" style="background: #fff5f5; padding: 10px; border: 1px solid #fc8181; border-radius: 4px;">
+                <label style="color:#c53030;">เริ่มจาก Serial Number (9 หลัก)</label>
+                <input type="number" id="in_start_serial" value="533803002" placeholder="เช่น 533803001">
+            </div>
+            <div class="form-group" style="background: #fff5f5; padding: 10px; border: 1px solid #fc8181; border-radius: 4px;">
+                <label style="color:#c53030;">จำนวนที่ต้องการพิมพ์ (ใบ)</label>
+                <input type="number" id="in_qty" value="1" min="1" max="100">
+            </div>
+            
+            <button class="btn-generate" onclick="generateBatch()">🚀 กดสร้างฉลาก (Generate)</button>
+            <button class="btn-print" onclick="window.print()">🖨️ สั่งพิมพ์ทั้งหมด</button>
+            <hr>
 
-    <div class="barcode-box">
-        <img id="bcImg" src="" style="display:none; max-width: 100%;">
-        <span id="txt" style="color:#aaa;">รหัสจะขึ้นที่นี่</span>
+            <div class="section-title">2. ข้อมูลทั่วไป (General Info)</div>
+            <div class="form-group"><label>SHIP FROM</label><textarea id="in_ship" rows="2">L.T. RUBBER CO.,LTD&#10;THAILAND</textarea></div>
+            <div class="form-group"><label>DESTINATION</label><textarea id="in_dest" rows="2">US-ARB PLANT&#10;USA</textarea></div>
+            <div class="form-group"><label>PG + IMP CODE (P)</label><input type="text" id="in_pg" value="PG08435AB"></div>
+            <div class="form-group"><label>Description</label><input type="text" id="in_desc" value="RSS1 SB COLOR CONTROL"></div>
+            <div class="form-group"><label>SMPT LOT NO. (H)</label><input type="text" id="in_lot" value="533803"></div>
+            <div class="form-group"><label>NIF CODE (V)</label><input type="text" id="in_nif" value="03312"></div>
+            <div class="form-group"><label>Packer</label><input type="text" id="in_packer" value="LTR"></div>
+            <div class="form-group"><label>Date</label><input type="date" id="in_date" value="2024-11-25"></div>
+            <div class="form-group"><label>Note (e.g. EUDR)</label><input type="text" id="in_eudr" value="EUDR"></div>
+            <div class="form-group"><label>Net Weight (KG)</label><input type="number" id="in_weight" value="1260"></div>
+        </div>
+
+        <div class="footer-credit">
+            System Developed by<br>
+            <b>J-Attaphon</b><br>
+            (IT Professional Specialist )
+        </div>
     </div>
 
-    <button class="btn btn-view" onclick="openImage()">🔍 เปิดรูปเพื่อบันทึก (Save As)</button>
-    
-    <button class="btn btn-print" onclick="window.print()">🖨️ สั่งพิมพ์หน้านี้</button>
+    <div class="preview-area" id="printableArea">
+        <div style="color:#666; margin-top:50px;">กดปุ่ม "🚀 กดสร้างฉลาก" เพื่อดูตัวอย่าง</div>
+    </div>
 
-    <p class="hint">
-        *วิธีกด Save: กดปุ่มสีฟ้า > คลิกขวาที่รูป > เลือก "Save Image As"
-    </p>
-</div>
+    <script>
+        const pad = (num, size) => ('000000000' + num).substr(-size);
 
-<script>
-    function getUrl(val) {
-        // สร้าง URL บาร์โค้ด (dpi=200 ชัดเจน)
-        return `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(val)}&translate-esc=on&dpi=200&showhrt=no`;
-    }
+        function generateBatch() {
+            let ship = document.getElementById('in_ship').value;
+            let dest = document.getElementById('in_dest').value;
+            let pg = document.getElementById('in_pg').value.toUpperCase();
+            let desc = document.getElementById('in_desc').value.toUpperCase();
+            let lot = document.getElementById('in_lot').value.toUpperCase();
+            let nif = document.getElementById('in_nif').value.toUpperCase();
+            let packer = document.getElementById('in_packer').value.toUpperCase();
+            let dateRaw = document.getElementById('in_date').value;
+            let eudr = document.getElementById('in_eudr').value.toUpperCase();
+            let weightRaw = document.getElementById('in_weight').value;
 
-    function gen() {
-        const val = document.getElementById('code').value;
-        const img = document.getElementById('bcImg');
-        const txt = document.getElementById('txt');
+            let startSerialStr = document.getElementById('in_start_serial').value;
+            let qty = parseInt(document.getElementById('in_qty').value);
 
-        if(val.trim()){
-            img.src = getUrl(val);
-            img.style.display = 'block';
-            txt.style.display = 'none';
-        } else {
-            img.style.display = 'none';
-            txt.style.display = 'block';
+            if(!startSerialStr || qty < 1) { alert("กรุณาระบุ Serial เริ่มต้น และจำนวนให้ถูกต้อง"); return; }
+            let startSerial = parseInt(startSerialStr);
+
+            let container = document.getElementById('printableArea');
+            container.innerHTML = ''; 
+
+            let dateFmt = "";
+            if(dateRaw) {
+                let d = new Date(dateRaw);
+                let dd = pad(d.getDate(), 2);
+                let mm = pad(d.getMonth() + 1, 2);
+                let yy = d.getFullYear().toString().substr(-2);
+                dateFmt = `${dd}/${mm}/${yy}`;
+            }
+            let nifPadded = pad(nif, 5);
+            let weightPadded = pad(weightRaw, 6);
+            let lotSpace = "    "; 
+
+            for (let i = 0; i < qty; i++) {
+                let currentSerialNum = startSerial + i;
+                let currentSerialPadded = pad(currentSerialNum, 9);
+                let id_2d = `cvs_2d_${i}`;
+                let id_pg = `cvs_pg_${i}`;
+                let id_lot = `cvs_lot_${i}`;
+                let id_serial = `cvs_serial_${i}`;
+
+                let fullString = `${nifPadded}${pg}${currentSerialPadded}${lot}${lotSpace}${weightPadded}${dateFmt}`;
+
+                let labelHTML = `
+                <div class="label-container">
+                    <div class="row row-1">
+                        <div class="cell-half"><div class="addr-header">SHIP FROM :</div><div class="addr-text">${ship}</div></div>
+                        <div class="cell-half"><div class="addr-header">DESTINATION</div><div class="addr-text">${dest}</div></div>
+                    </div>
+                    <div class="row row-2">
+                        <canvas id="${id_2d}"></canvas>
+                        <div class="text-under-2d">${fullString}</div>
+                    </div>
+                    <div class="row row-3 cell">
+                        <div class="field-label">PG + IMP CODE (P)</div>
+                        <div class="field-value">${pg}</div>
+                        <div class="barcode-1d-wrapper"><canvas id="${id_pg}" style="height:40px;"></canvas></div>
+                    </div>
+                    <div class="row row-4 cell">
+                        <div class="field-label">Production Descrition</div>
+                        <div class="field-value value-desc">${desc}</div>
+                    </div>
+                    <div class="row row-5 cell">
+                        <div class="field-label">SMPT LOT NO. (H)</div>
+                        <div class="field-value">${lot}</div>
+                        <div class="barcode-1d-wrapper"><canvas id="${id_lot}" style="height:35px;"></canvas></div>
+                    </div>
+                    <div class="row row-6 cell"><div class="field-label">NIF CODE (V)</div><div class="field-value">${nifPadded}</div></div>
+                    <div class="row row-7 cell"><div class="field-label">Packer Code / Packer name</div><div class="field-value">${packer}</div></div>
+                    <div class="row row-8 cell">
+                        <div class="field-label">Date Of fabrication (DD/MM/YY)</div>
+                        <div class="field-value">${dateFmt}</div>
+                        <div class="eudr-flag">${eudr}</div>
+                    </div>
+                    <div class="row row-9 cell"><div class="field-label">Net weight ( Kg )</div><div class="field-value">${weightPadded}</div></div>
+                    <div class="row row-10 cell last">
+                        <div class="field-label">Serial Number (S)</div>
+                        <div class="field-value">${currentSerialPadded}</div>
+                        <div class="barcode-1d-wrapper"><canvas id="${id_serial}" style="height:40px;"></canvas></div>
+                    </div>
+                </div>
+                `;
+
+                container.insertAdjacentHTML('beforeend', labelHTML);
+
+                try {
+                    let opts1D = { bcid:'code128', scale:2, height:10, includetext:false, textxalign:'center' };
+                    bwipjs.toCanvas(id_2d, { bcid: 'datamatrix', text: fullString, scale: 4, includetext: false, padding:0 });
+                    bwipjs.toCanvas(id_pg, { ...opts1D, text: 'P' + pg });
+                    bwipjs.toCanvas(id_lot, { ...opts1D, text: 'H' + lot });
+                    bwipjs.toCanvas(id_serial, { ...opts1D, text: 'S' + currentSerialPadded });
+                } catch (e) { console.error("Error rendering label " + i, e); }
+            }
         }
-    }
 
-    function openImage() {
-        const val = document.getElementById('code').value;
-        if(!val.trim()) { alert("ใส่รหัสก่อนครับ"); return; }
-        
-        const url = getUrl(val);
-        
-        // เปิดหน้าต่างใหม่ เขียน HTML ลงไปเพื่อให้คลิกขวา Save ง่ายๆ
-        const win = window.open("");
-        win.document.write(`
-            <html>
-            <head><title>Save Barcode ${val}</title></head>
-            <body style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#eee;">
-                <h3>รหัส: ${val}</h3>
-                <img src="${url}" style="border:1px solid #ccc; background:#fff; padding:20px;">
-                <p style="font-family:sans-serif; color:#555;">คลิกขวาที่รูปด้านบน แล้วเลือก <b>"Save Image As..."</b> (บันทึกรูปภาพเป็น...)</p>
-            </body>
-            </html>
-        `);
-    }
-</script>
-
+        window.onload = function() { setTimeout(generateBatch, 500); };
+    </script>
 </body>
 </html>
